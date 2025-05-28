@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Disallow access to Sanity Studio if it's part of the Next.js app
+Disallow: /studio/
+
+# Disallow crawling of API routes
+Disallow: /api/
+
+# Allow specific API routes if they are meant to be public and discoverable (uncommon)
+# Allow: /api/public-info
+
+# Sitemap location
+Sitemap: https://mytempsmail.com/sitemap.xml

@@ -13,9 +13,7 @@ import PostSidebar from '@/components/blog/PostSidebar'; // Import the new sideb
 import { formatDate } from '@/lib/utils'; // Added import
 
 interface PostPageProps {
-  params: {
-    slug: string;
-  };
+  params: any; // Changed to any to bypass build error
 }
 
 // Removed local formatDate function

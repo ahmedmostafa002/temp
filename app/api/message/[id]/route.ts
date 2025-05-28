@@ -1,6 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, context: { params: { id: string } }) {
+interface RouteContext {
+  params: {
+    id: string;
+  };
+}
+
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const apiKey = process.env.RAPIDAPI_KEY;
     if (!apiKey) {

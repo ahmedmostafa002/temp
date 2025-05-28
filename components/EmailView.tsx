@@ -18,147 +18,240 @@ export default function EmailView({
   isDownloading,
 }: EmailViewProps) {
   const processNode = (node: Node): string => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      return node.textContent || "";
-    }
-
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as HTMLElement;
-      let childrenHtml = "";
-      el.childNodes.forEach(child => {
-        childrenHtml += processNode(child);
-      });
-
-      // Simplified switch for focused debugging
-      const tagName = el.tagName.toLowerCase();
-      if (tagName === "a") {
-        const href = el.getAttribute("href") || "#";
-        const safeHref = (href.startsWith("http:") || href.startsWith("https:") || href.startsWith("mailto:") || href.startsWith("/") || href.startsWith("#")) ? href : "#";
-        return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" style="color: blue; text-decoration: underline;">${childrenHtml}</a>`;
-      } else if (tagName === "p") {
-        return `<p style="margin-bottom: 1em;">${childrenHtml}</p>`;
-      } else if (tagName === "br") {
-        return "<br />";
-      } else if (tagName === "strong" || tagName === "b") {
-        return `<strong>${childrenHtml}</strong>`;
-      } else if (tagName === "em" || tagName === "i") {
-        return `<em>${childrenHtml}</em>`;
+    try {
+      // Handle text nodes
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent || "";
       }
-      // For all other tags, try to reconstruct them simply or just pass children
-      // This is to see if the basic structure is preserved
-      if (el.childNodes.length > 0) { // If it has children, reconstruct the tag
-        return `<${tagName}>${childrenHtml}</${tagName}>`;
-      } else { // If it's an empty tag (like <hr> potentially, though <br> is handled)
-        return `<${tagName} />`;
+
+      // Handle element nodes
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement;
+        const tagName = el.tagName.toLowerCase();
+        let childrenHtml = "";
+        
+        // Process all child nodes
+        el.childNodes.forEach(child => {
+          childrenHtml += processNode(child);
+        });
+
+        // Handle different HTML elements
+        switch (tagName) {
+          case 'a': {
+            const href = el.getAttribute('href') || '#';
+            return `<a href="${href}" target="_blank" rel="noopener noreferrer" 
+                    style="color: #2563eb; text-decoration: underline; cursor: pointer; word-break: break-all;">
+                    ${childrenHtml || href}
+                  </a>`;
+          }
+          case 'p':
+            return `<p style="margin: 0 0 1em 0; padding: 0; white-space: pre-line;">${childrenHtml}</p>`;
+          case 'br':
+            return '<br />';
+          case 'strong':
+          case 'b':
+            return `<strong>${childrenHtml}</strong>`;
+          case 'em':
+          case 'i':
+            return `<em>${childrenHtml}</em>`;
+          case 'div':
+            return `<div style="margin-bottom: 1em;">${childrenHtml}</div>`;
+          case 'span':
+            return `<span>${childrenHtml}</span>`;
+          case 'img': {
+            const src = el.getAttribute('src') || '';
+            const alt = el.getAttribute('alt') || '';
+            return `<img src="${src}" alt="${alt}" style="max-width: 100%; height: auto;" />`;
+          }
+          case 'ul':
+            return `<ul style="margin: 0.5em 0 1em 1.5em; padding: 0;">${childrenHtml}</ul>`;
+          case 'ol':
+            return `<ol style="margin: 0.5em 0 1em 1.5em; padding: 0 0 0 1.5em;">${childrenHtml}</ol>`;
+          case 'li':
+            return `<li style="margin-bottom: 0.25em;">${childrenHtml}</li>`;
+          case 'h1':
+          case 'h2':
+          case 'h3':
+          case 'h4':
+          case 'h5':
+          case 'h6':
+            return `<${tagName} style="margin: 1.5em 0 0.75em 0; font-weight: 600; line-height: 1.3;">${childrenHtml}</${tagName}>`;
+          default:
+            if (el.childNodes.length > 0) {
+              return `<${tagName}>${childrenHtml}</${tagName}>`;
+            } else {
+              return `<${tagName} />`;
+            }
+        }
       }
+      
+      return '';
+    } catch (error) {
+      console.error('Error processing node:', error);
+      return '';
     }
-    return "";
   };
 
   let processedEmailBody = "";
   if (typeof window !== "undefined" && selectedMessage.body) {
+    const body = selectedMessage.body;
+    
+    // Enhanced URL detection pattern
+    const urlPattern = /(https?:\/\/[^\s<]+)|(www\.[^\s<]+\.[^\s<]+)|(\b[^\s<@]+@[^\s<]+\.[^\s<]+\b)/gi;
+    const hasUrls = urlPattern.test(body);
+    
+    // Check if it's likely plain text (no HTML tags or minimal HTML)
+    const isLikelyPlainText = !/<[a-z][\s\S]*>/i.test(body) || body.includes('\n\n') || body.includes('  ');
+    
     try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(selectedMessage.body, "text/html");
-      if (doc.body) {
-        // Simpler loop for processing
-        doc.body.childNodes.forEach(node => {
-          processedEmailBody += processNode(node);
-        });
-
-        // Fallback if processing results in nothing substantial
-        if (processedEmailBody.replace(/<[^>]*>/g, '').trim().length < (selectedMessage.body.replace(/<[^>]*>/g, '').trim().length / 2) && doc.body.textContent) {
-           // If processed body is much shorter than original text content, maybe parser stripped too much.
-           // Fallback to a more direct rendering of paragraphs from text content.
-           // TODO: Replace with structured warning logging (e.g., logger.warn)
-           console.warn("Parser might have stripped too much content, using textContent fallback.");
-           const rawText = doc.body.textContent;
-           processedEmailBody = rawText.split(/\n\s*\n|\n/)
-                               .map(para => para.trim())
-                               .filter(para => para)
-                               .map(para => `<p style="margin-bottom: 1em;">${para.replace(/\n/g, "<br />")}</p>`)
-                               .join('');
-        }
-        if (processedEmailBody.trim() === "") {
-             processedEmailBody = `<p style="margin-bottom: 1em;">${doc.body.textContent || "No displayable content."}</p>`;
-        }
-
+      if (isLikelyPlainText) {
+        // Process as plain text with enhanced link detection
+        const withLinks = body
+          // Convert URLs to clickable links
+          .replace(/(https?:\/\/[^\s<]+)/g, 
+            '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; word-break: break-all;">$1</a>')
+          // Convert www links (without http)
+          .replace(/([^"'>])(www\.[^\s<]+\.[^\s<]+)/g, 
+            '$1<a href="https://$2" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; word-break: break-all;">$2</a>')
+          // Convert email addresses
+          .replace(/([\w\.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/g, 
+            '<a href="mailto:$1" style="color: #2563eb; text-decoration: underline;">$1</a>');
+        
+        // Split into paragraphs and wrap in <p> tags
+        processedEmailBody = withLinks
+          .split(/\n\s*\n|\n/)
+          .map(para => {
+            // Trim and skip empty paragraphs
+            const trimmed = para.trim();
+            if (!trimmed) return '';
+            
+            // Special handling for common patterns like "Click here: http://..."
+            if (trimmed.match(/^[^<]*click\s+here[^<]*http/i)) {
+              return `<p style="margin: 0 0 1em 0; padding: 0; white-space: pre-line;">${
+                trimmed.replace(/(click\s+here)([^<]*)(https?:\/\/\S+)/i, 
+                  '<a href="$3" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 500;">$1</a>$2$3')
+              }</p>`;
+            }
+            
+            return `<p style="margin: 0 0 1em 0; padding: 0; white-space: pre-line;">${trimmed}</p>`;
+          })
+          .join('');
       } else {
-        processedEmailBody = "<p style='margin-bottom: 1em;'>Error: Parsed document has no body.</p>";
+        // Process as HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(body, "text/html");
+        
+        if (doc.body) {
+          // Process each top-level node in the body
+          doc.body.childNodes.forEach(node => {
+            processedEmailBody += processNode(node);
+          });
+          
+          // If we didn't get any meaningful content, fall back to text processing
+          const textContent = doc.body.textContent || '';
+          if (processedEmailBody.replace(/<[^>]*>/g, '').trim().length < textContent.trim().length / 2) {
+            processedEmailBody = body; // Fall back to original body
+          }
+        }
       }
-    } catch (e: any) {
-      // TODO: Replace with structured error logging (e.g., Sentry.captureException, logger.error)
-      console.error("Error parsing email HTML:", e); 
-      processedEmailBody = `<p style='margin-bottom: 1em;'>Error parsing email: ${e.message}. See console for details.</p>`;
+    } catch (e) {
+      console.error("Error processing email content:", e);
+      // Fallback to simple text processing with link detection
+      const withLinks = body
+        .replace(/(https?:\/\/[^\s<]+)/g, 
+          '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; word-break: break-all;">$1</a>')
+        .replace(/([^"'>])(www\.[^\s<]+\.[^\s<]+)/g, 
+          '$1<a href="https://$2" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; word-break: break-all;">$2</a>');
+      
+      processedEmailBody = `<div style="white-space: pre-wrap; padding: 1em;">${withLinks}</div>`;
+    }
+    
+    // If we still have no content, show the raw content
+    if (!processedEmailBody.trim()) {
+      processedEmailBody = `<div style="white-space: pre-wrap; padding: 1em;">${body}</div>`;
     }
   } else {
     processedEmailBody = "<p class='email-paragraph'>No content available.</p>";
   }
   
   const iframeSrcDoc = `
+    <!DOCTYPE html>
     <html>
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          html, body {
+          * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            height: auto; 
-            overflow: hidden; 
+            word-break: break-word;
           }
-          html {
-             background-color: #f8f9fa;
+          p {
+            margin: 0 0 0.25em 0;
+            padding: 0;
+          }
+          html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            overflow: hidden;
           }
           body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            line-height: 1.65;
-            color: #333;
-            background-color: #ffffff;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            box-sizing: border-box; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            color: #1a1a1a;
+            padding: 0;
+            margin: 0;
+            min-height: 100%;
+            box-sizing: border-box;
+          }
+          a {
+            color: #2563eb;
+            text-decoration: underline;
+            word-break: break-all;
+          }
+          img {
+            max-width: 100%;
+            height: auto;
           }
           .email-container {
-            padding: 24px; 
+            width: 100%;
+            margin: 0;
+            padding: 12px 16px 0;
+            display: block;
+            min-height: 100%;
             box-sizing: border-box;
-            word-wrap: break-word; 
           }
-          .email-paragraph { margin-top: 0; margin-bottom: 1.25em; }
-          .email-heading, h1, h2, h3, h4, h5, h6 { margin-top: 1.5em; margin-bottom: 0.75em; line-height: 1.3; font-weight: 600; color: #111827; }
-          h1, .h1.email-heading { font-size: 2em; margin-top: 0; } 
-          h2, .h2.email-heading { font-size: 1.5em; } 
-          h3, .h3.email-heading { font-size: 1.25em; } 
-          h4, .h4.email-heading { font-size: 1em; } 
-          a, a[href] { color: #2563eb; text-decoration: underline; font-weight: 500; }
-          a:hover, a[href]:hover { color: #1d4ed8; text-decoration: underline; }
-          .email-image, img { max-width: 100%; height: auto; display: block; border-radius: 6px; margin-top: 0.5em; margin-bottom: 0.5em; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
-          .email-table, table { border-collapse: collapse; width: 100%; margin-bottom: 1.5em; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
-          .email-table th, .email-table td, table th, table td { border: 1px solid #e5e7eb; padding: 10px 14px; text-align: left; vertical-align: top; }
-          .email-table th, table th { background-color: #f9fafb; font-weight: 600; color: #374151; }
-          .email-table td, table td { color: #4b5563; }
-          .email-pre, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; white-space: pre-wrap; word-wrap: break-word; background-color: #f3f4f6; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.9em; line-height: 1.5; color: #1f2937; border: 1px solid #e5e7eb; }
-          .email-code, code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; padding: 0.2em 0.4em; margin: 0 0.1em; font-size: 85%; background-color: #e5e7eb; border-radius: 4px; color: #c026d3; }
-          .email-pre > code, pre > code { padding: 0; margin: 0; font-size: inherit; background-color: transparent; border-radius: 0; color: inherit; border: none; }
-          .email-blockquote, blockquote { border-left: 4px solid #9ca3af; padding: 12px 20px; margin: 1.5em 0; background-color: #f9fafb; color: #4b5563; font-style: normal; border-radius: 0 4px 4px 0; }
-          .email-blockquote p { margin-bottom: 0.5em; }
-          .email-blockquote p:last-child { margin-bottom: 0; }
-          .email-list, ul, ol { margin-top: 0; margin-bottom: 1.25em; padding-left: 1.8em; }
-          .email-list-item, li { margin-bottom: 0.5em; }
-          .email-hr, hr { border: none; border-top: 1px solid #e5e7eb; margin: 2.5em 0; }
-          .email-generic-div, .email-generic-span, .email-unhandled-block { display: block; margin-bottom: 0.5em; } /* Basic styling for generic/unhandled blocks */
-          .email-generic-span { display: inline; margin-bottom: 0; }
-          .email-unhandled-block { border: 1px dashed #ccc; padding: 4px; margin: 4px 0; }
-
-          .button, a.button, button.button, a.btn, button.btn, a[role="button"], button[role="button"], table[role="presentation"] a[href*="://"] { display: inline-block; padding: 10px 24px; background-color: #2563eb; color: white !important; text-decoration: none !important; border-radius: 6px; font-weight: 500; text-align: center; border: 1px solid transparent; transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06); }
-          .button:hover, a.button:hover, button.button:hover, a.btn:hover, button.btn:hover, a[role="button"]:hover, button[role="button"]:hover, table[role="presentation"] a[href*="://"]:hover { background-color: #1d4ed8; text-decoration: none !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
-          .text-small { font-size: 0.875em; color: #6b7280; }
         </style>
       </head>
-      <body>
+      <body style="margin: 0; padding: 0; overflow: visible !important;">
         <div class="email-container">
           ${processedEmailBody}
         </div>
+        <script>
+          // Send height to parent when content loads
+          function updateHeight() {
+            const height = Math.max(
+              document.body.scrollHeight,
+              document.documentElement.scrollHeight
+            );
+            window.parent.postMessage({ type: 'setHeight', height: height }, '*');
+          }
+          
+          // Update height on load and resize
+          window.addEventListener('load', updateHeight);
+          window.addEventListener('resize', updateHeight);
+          
+          // Initial height update
+          updateHeight();
+          
+          // Additional updates to catch dynamic content
+          setTimeout(updateHeight, 500);
+          setTimeout(updateHeight, 1000);
+        </script>
       </body>
     </html>
   `;
@@ -194,41 +287,72 @@ export default function EmailView({
           </div>
         </div>
       </CardHeader>
-      <CardBody className="p-0 flex flex-col overflow-hidden">
-        <iframe
-          srcDoc={iframeSrcDoc}
-          style={{ width: "100%", height: "100%", border: "none", flexGrow: 1 }}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-top-navigation-by-user-activation"
-          title={`Email: ${selectedMessage.subject}`}
-          className="bg-white dark:bg-content1" 
-        />
-        {selectedMessage.attachments && selectedMessage.attachments.length > 0 && (
+      <CardBody className="p-0 flex flex-col h-full">
+        <div className="flex-1 overflow-hidden">
+          <iframe
+            srcDoc={iframeSrcDoc}
+            style={{
+              width: "100%",
+              height: "100%",
+              minHeight: "100%",
+              border: "none",
+              display: "block",
+              margin: 0,
+              padding: 0
+            }}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-top-navigation-by-user-activation"
+            title={`Email: ${selectedMessage.subject}`}
+            className="bg-white dark:bg-content1"
+          />
+        </div>
+        {(selectedMessage.hasAttachments || (selectedMessage.attachments && selectedMessage.attachments.length > 0)) && (
           <div className="p-4 border-t border-divider bg-content2">
             <h4 className="font-semibold mb-2 text-sm text-foreground-700">
               Attachments:
             </h4>
             <ul className="space-y-2 list-none p-0">
-              {selectedMessage.attachments.map((att: Attachment) => (
-                <li
-                  key={att.id || att.filename}
-                  className="flex items-center justify-between p-2 rounded-md hover:bg-content3"
-                >
-                  <span className="text-sm truncate max-w-[calc(100%-120px)] text-foreground-700">
-                    {att.filename}
+              {selectedMessage.attachments && selectedMessage.attachments.length > 0 ? (
+                // Show actual attachments if available
+                selectedMessage.attachments.map((att: Attachment) => (
+                  <li
+                    key={att.id || att.filename}
+                    className="flex items-center justify-between p-2 rounded-md hover:bg-content3"
+                  >
+                    <span className="text-sm truncate max-w-[calc(100%-120px)] text-foreground-700">
+                      {att.filename}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="primary"
+                      isLoading={isDownloading}
+                      onPress={() => onDownloadAttachment(att.filename)}
+                      startContent={<Download className="h-4 w-4" />}
+                      className="text-xs"
+                    >
+                      Download
+                    </Button>
+                  </li>
+                ))
+              ) : (
+                // Show a generic download button if hasAttachments is true but no attachments array
+                <li className="flex items-center justify-between p-2 rounded-md hover:bg-content3">
+                  <span className="text-sm text-foreground-700">
+                    File attachment
                   </span>
                   <Button
                     size="sm"
                     variant="flat"
                     color="primary"
                     isLoading={isDownloading}
-                    onPress={() => onDownloadAttachment(att.filename)}
+                    onPress={() => onDownloadAttachment('attachment')}
                     startContent={<Download className="h-4 w-4" />}
                     className="text-xs"
                   >
                     Download
                   </Button>
                 </li>
-              ))}
+              )}
             </ul>
           </div>
         )}

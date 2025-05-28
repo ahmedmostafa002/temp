@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description:
     "Instantly get a Free Temporary Gmail Account with Inbox from My Temps Mail. Our 10minutemail generator provides disposable addresses for secure testing, sign-ups, and privacy. No registration required.", // Focused on Gmail
   keywords:
-    "free temporary gmail account with inbox, temp gmail, disposable gmail, temporary gmail generator, fake gmail, my temps mail, anonymous gmail, privacy protection, free temp mail", // Focused on Gmail
+    "free temporary gmail account with inbox, temp gmail, disposable gmail, temporary gmail generator, my temps mail, anonymous gmail, free temp mail, temporary gmail address, disposable gmail address, temporary gmail, create gmail address, disposable mail, free gmail address, gmail generator, email address generator, throwaway email, throwaway gmail, temporary email address, free email address, anonymous email account, anonymous gmail account", // Focused on Gmail
   authors: [{ name: "My Temps Mail" }],
   creator: "My Temps Mail",
   publisher: "My Temps Mail",

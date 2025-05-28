@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: { id: string } }) {
   try {
     const apiKey = process.env.RAPIDAPI_KEY;
     if (!apiKey) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const searchParams = request.nextUrl.searchParams
     const token = searchParams.get("token")
-    const messageIdFromPath = params.id; // Use the ID from the path for our response
+    const messageIdFromPath = context.params.id; // Use the ID from the path for our response
 
     if (!token) {
       return NextResponse.json({ error: "Token is required" }, { status: 400 })

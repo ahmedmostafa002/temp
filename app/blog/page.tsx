@@ -4,15 +4,11 @@ import { Metadata } from "next";
 import { SanityBlogPost } from "@/types";
 import { getPaginatedBlogPosts, getPostsTotalCount } from "@/lib/sanity.queries";
 import { urlFor } from "@/lib/sanity.client";
-import { Chip } from "@nextui-org/react"; // Assuming Chip is still used for tags if fetched
-import { Calendar, Clock } from "lucide-react"; // Icons for date/read time
-import { formatDate } from '@/lib/utils'; // Added import
+import { Chip } from "@nextui-org/react";
+import { Calendar, Clock } from "lucide-react";
+import { formatDate } from '@/lib/utils';
 
 const POSTS_PER_PAGE = 9; // Display 9 posts per page (3x3 grid)
-
-// Removed local formatDate function
-
-export const dynamic = 'force-dynamic'; // Add this line to force dynamic rendering
 
 export const metadata: Metadata = {
   title: "Blog | Insights on Free Temporary Gmail Accounts with Inbox - My Temps Mail",
@@ -33,13 +29,11 @@ export const metadata: Metadata = {
 };
 
 interface BlogPageProps {
-  params?: { [key: string]: string | string[] | undefined };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams: any; // Using any to match the working version
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const pageQuery = searchParams?.page;
-  const currentPage = parseInt(Array.isArray(pageQuery) ? pageQuery[0] : pageQuery || "1", 10);
+  const currentPage = parseInt(searchParams.page || "1", 10);
   const pageIndex = currentPage - 1; // 0-indexed for query
 
   const [posts, totalPosts] = await Promise.all([

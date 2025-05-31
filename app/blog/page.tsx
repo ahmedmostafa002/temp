@@ -33,10 +33,10 @@ export const metadata: Metadata = {
 };
 
 interface BlogPageProps {
-  searchParams?: { 
-    [key: string]: string | string[] | undefined;
-    page?: string;
-  };
+  searchParams: {
+    [key: string]: string | string[] | undefined
+    page?: string
+  }
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {

@@ -12,6 +12,8 @@ const POSTS_PER_PAGE = 9; // Display 9 posts per page (3x3 grid)
 
 // Removed local formatDate function
 
+export const dynamic = 'force-dynamic'; // Add this line to force dynamic rendering
+
 export const metadata: Metadata = {
   title: "Blog | Insights on Free Temporary Gmail Accounts with Inbox - My Temps Mail",
   description: "Explore articles, guides, and tips from My Temps Mail on using free temporary Gmail accounts with inbox, temp mail for privacy, disposable email strategies, and online security.",
@@ -31,11 +33,11 @@ export const metadata: Metadata = {
 };
 
 interface BlogPageProps {
-  searchParams: any; // Changed to any to bypass build error
+  searchParams?: { page?: string; };
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const currentPage = parseInt(searchParams.page || "1", 10);
+  const currentPage = parseInt(searchParams?.page || "1", 10); // Added optional chaining for searchParams
   const pageIndex = currentPage - 1; // 0-indexed for query
 
   const [posts, totalPosts] = await Promise.all([

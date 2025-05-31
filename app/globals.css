@@ -55,28 +55,10 @@
   body {
     font-feature-settings: "rlig" 1, "calt" 1;
     @apply bg-background text-foreground;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    /* Scrollbar visibility will now be default browser behavior */
   }
 
-  body::-webkit-scrollbar {
-    display: none; /* WebKit browsers */
-  }
-
-  /* Hide scrollbars on all elements for WebKit */
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Hide scrollbars on all elements for Firefox */
-  * {
-    scrollbar-width: none;
-  }
-
-  /* Hide scrollbars on all elements for IE/Edge (legacy) */
-  * {
-    -ms-overflow-style: none;
-  }
+  /* Removed scrollbar hiding rules */
 }
 
 @layer utilities {

@@ -22,6 +22,7 @@ export default function NavigationBar() {
 
   const navLinks = [
     { href: "/", label: "Home" },
+    { href: "/random-email-name-generator", label: "Email Name Generator" },
     { href: "/blog", label: "Blog" },
     { href: "/faq", label: "FAQ" },
   ];

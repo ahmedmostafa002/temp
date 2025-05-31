@@ -1,10 +1,10 @@
 "use client"; // Add this directive for client-side interactivity
 
 import { Chip } from "@nextui-org/react";
-import { CheckCircle, Zap, Shield, Globe } from "lucide-react";
+import { CheckCircle, Zap, Shield, Cpu } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function HeroIntro() {
+export default function HeroSectionREG() {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -40,11 +40,12 @@ export default function HeroIntro() {
     },
   };
 
-  const chipsData = [
+
+  const chips = [
     { text: "100% Free", icon: <CheckCircle className="h-5 w-5 text-sky-300" /> },
     { text: "Instant Generation", icon: <Zap className="h-5 w-5 text-sky-300" /> },
-    { text: "Privacy Protected", icon: <Shield className="h-5 w-5 text-sky-300" /> },
-    { text: "Real Gmail", icon: <Globe className="h-5 w-5 text-sky-300" /> },
+    { text: "Privacy Focused", icon: <Shield className="h-5 w-5 text-sky-300" /> },
+    { text: "AI-Powered", icon: <Cpu className="h-5 w-5 text-sky-300" /> },
   ];
 
   return (
@@ -60,25 +61,25 @@ export default function HeroIntro() {
             className="text-5xl md:text-6xl font-bold mb-6"
             variants={itemVariants}
           >
-            Free <span className="text-sky-300">Temporary Gmail Account</span>
-            <br className="md:hidden" /> with Inbox
+            Free <span className="text-sky-300">Random Email Name</span> Generator
+            <br className="md:hidden" /> 
           </motion.h1>
           <motion.p 
             className="text-xl md:text-2xl text-purple-100 dark:text-purple-200 mb-10 leading-relaxed"
             variants={itemVariants}
           >
-            Generate temporary Gmail accounts with full inbox access instantly. Perfect for testing, registrations, and
-            privacy protection. No sign-up required - completely free temp Gmail account generator.
+            Instantly generate unique and creative email names with our powered tool.
+            Perfect for sign-ups, testing, and protecting your privacy. Choose your preferred domain or add your custom domain name!
           </motion.p>
           <motion.div 
             className="flex flex-wrap justify-center items-center gap-3 md:gap-4 mb-8"
-            variants={containerVariants}
+            variants={containerVariants} // Use container for staggering children if needed, or just itemVariants
           >
-            {chipsData.map((chip) => (
+            {chips.map((chip, index) => (
               <motion.div key={chip.text} variants={chipItemVariants}>
                 <Chip 
                   variant="bordered" 
-                  className="border-purple-300 text-purple-100 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors"
+                  className="border-purple-300 text-purple-100 bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors" // Added hover effect
                   startContent={chip.icon}
                 >
                   {chip.text}
@@ -87,7 +88,6 @@ export default function HeroIntro() {
             ))}
           </motion.div>
         </div>
-        {/* The interactive EmailClient component will be placed after this by the main page */}
       </motion.section>
     </div>
   );

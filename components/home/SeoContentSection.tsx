@@ -296,8 +296,9 @@ export default function SeoContentSection() {
             Final Thought About Temporary Gmail Account
           </h2>
           <p className="mb-4 leading-relaxed">
-            While a temporary Gmail account provides excellent security and convenience, it lacks persistence. Regular accounts may be more beneficial for long-term communications. Equip yourself with both for a complete range of email functionality.
-          </p>
+            While a temporary Gmail account offers excellent security and convenience, it lacks persistence. Regular accounts may be more beneficial for long-term communication. Equip yourself with both to enjoy a complete range of email functionality.
+
+            If you need help creating email names when setting up your own account, we also provide a <a href="https://mytempsmail.com/random-email-name-generator" className="text-blue-600 dark:text-blue-400 hover:underline">free email name generator</a>. Try it to find the perfect email address for personal use!          </p>
         </div>
       </div>
     </section>

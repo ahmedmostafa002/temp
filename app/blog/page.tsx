@@ -33,14 +33,13 @@ export const metadata: Metadata = {
 };
 
 interface BlogPageProps {
-  searchParams: {
-    [key: string]: string | string[] | undefined
-    page?: string
-  }
+  params?: { [key: string]: string | string[] | undefined };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const currentPage = parseInt(searchParams?.page || "1", 10); // Added optional chaining for searchParams
+  const pageQuery = searchParams?.page;
+  const currentPage = parseInt(Array.isArray(pageQuery) ? pageQuery[0] : pageQuery || "1", 10);
   const pageIndex = currentPage - 1; // 0-indexed for query
 
   const [posts, totalPosts] = await Promise.all([
